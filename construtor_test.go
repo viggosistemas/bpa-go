@@ -120,8 +120,8 @@ func TestMisturaProibida(t *testing.T) {
 func TestConstruirSemRegistros(t *testing.T) {
 	c := NovoConstrutor(cabecalhoValido())
 	_, err := c.Construir()
-	if !errors.Is(err, ErrValidacao) {
-		t.Errorf("esperava ErrValidacao, obteve %v", err)
+	if !errors.Is(err, ErrValidacaoBpa) {
+		t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 	}
 }
 

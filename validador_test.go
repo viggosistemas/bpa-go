@@ -26,8 +26,8 @@ func TestValidarCabecalho(t *testing.T) {
 		c := valido
 		c.Competencia = "2026"
 		err := validarCabecalho(c)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 
@@ -35,8 +35,8 @@ func TestValidarCabecalho(t *testing.T) {
 		c := valido
 		c.TipoDestino = "X"
 		err := validarCabecalho(c)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 }
@@ -62,8 +62,8 @@ func TestValidarRegistroBpaC(t *testing.T) {
 		r := valido
 		r.Cnes = "12345678"
 		err := validarRegistroBpaC(r)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 
@@ -71,8 +71,8 @@ func TestValidarRegistroBpaC(t *testing.T) {
 		r := valido
 		r.Idade = 131
 		err := validarRegistroBpaC(r)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 
@@ -80,8 +80,8 @@ func TestValidarRegistroBpaC(t *testing.T) {
 		r := valido
 		r.Quantidade = 0
 		err := validarRegistroBpaC(r)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 }
@@ -115,8 +115,8 @@ func TestValidarRegistroBpaI(t *testing.T) {
 		r := valido
 		r.Cbo = ""
 		err := validarRegistroBpaI(r)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 
@@ -124,8 +124,112 @@ func TestValidarRegistroBpaI(t *testing.T) {
 		r := valido
 		r.Sexo = "X"
 		err := validarRegistroBpaI(r)
-		if !errors.Is(err, ErrValidacao) {
-			t.Errorf("esperava ErrValidacao, obteve %v", err)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("data atendimento com letras", func(t *testing.T) {
+		r := valido
+		r.DataAtendimento = "2026040A"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("data atendimento tamanho invalido", func(t *testing.T) {
+		r := valido
+		r.DataAtendimento = "202604"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("data nascimento com letras", func(t *testing.T) {
+		r := valido
+		r.DataNascimento = "1996011X"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("data nascimento tamanho invalido", func(t *testing.T) {
+		r := valido
+		r.DataNascimento = "1996"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("cns profissional com letras", func(t *testing.T) {
+		r := valido
+		r.CnsProfissional = "12345678901234A"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("cns paciente com letras", func(t *testing.T) {
+		r := valido
+		r.CnsPaciente = "98765432101234B"
+		err := validarRegistroBpaI(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+}
+
+func TestCampoNumericoComLetras(t *testing.T) {
+	t.Run("cnes com letras no BPA-C", func(t *testing.T) {
+		r := RegistroBpaCEntrada{
+			Cnes:         "123ABC7",
+			Competencia:  "202604",
+			Cbo:          "225142",
+			Procedimento: "0301010064",
+			Idade:        30,
+			Quantidade:   1,
+			Origem:       "BPA",
+		}
+		err := validarRegistroBpaC(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("procedimento com letras no BPA-C", func(t *testing.T) {
+		r := RegistroBpaCEntrada{
+			Cnes:         "1234567",
+			Competencia:  "202604",
+			Cbo:          "225142",
+			Procedimento: "030101ABC4",
+			Idade:        30,
+			Quantidade:   1,
+			Origem:       "BPA",
+		}
+		err := validarRegistroBpaC(r)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
+		}
+	})
+
+	t.Run("cnpj_cpf com letras no cabecalho", func(t *testing.T) {
+		c := CabecalhoEntrada{
+			Competencia:      "202604",
+			OrgaoResponsavel: "SMS",
+			SiglaOrgao:       "SMS",
+			CnpjCpf:          "1234567890ABCD",
+			OrgaoDestino:     "SES",
+			TipoDestino:      "E",
+			VersaoSistema:    "1.0",
+		}
+		err := validarCabecalho(c)
+		if !errors.Is(err, ErrValidacaoBpa) {
+			t.Errorf("esperava ErrValidacaoBpa, obteve %v", err)
 		}
 	})
 }

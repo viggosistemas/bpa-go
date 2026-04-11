@@ -3,6 +3,7 @@ package bpa
 import (
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // tipoBpa indica o tipo de registros no construtor.
@@ -66,43 +67,52 @@ func (c *Construtor) Construir() ([]byte, error) {
 
 	totalRegistros := len(c.registrosC) + len(c.registrosI)
 	if totalRegistros == 0 {
-		return nil, fmt.Errorf("%w: nenhum registro adicionado", ErrValidacao)
+		return nil, fmt.Errorf("%w: nenhum registro adicionado", ErrValidacaoBpa)
 	}
 
 	totalFolhas := (totalRegistros-1)/registrosPorFolha + 1
-	campoControle := calcularChecksum(c)
+	campoControle, err := calcularChecksum(c)
+	if err != nil {
+		return nil, err
+	}
 
-	var conteudo string
+	var sb strings.Builder
 
 	// cabecalho com total_linhas = total de registros (sem contar cabecalho)
-	conteudo += gerarCabecalho(c.cabecalho, totalRegistros, totalFolhas, campoControle)
+	sb.WriteString(gerarCabecalho(c.cabecalho, totalRegistros, totalFolhas, campoControle))
 
 	for i, reg := range c.registrosC {
 		folha := i/registrosPorFolha + 1
 		sequencia := i%registrosPorFolha + 1
-		conteudo += gerarRegistroBpaC(reg, folha, sequencia)
+		sb.WriteString(gerarRegistroBpaC(reg, folha, sequencia))
 	}
 
 	for i, reg := range c.registrosI {
 		folha := i/registrosPorFolha + 1
 		sequencia := i%registrosPorFolha + 1
-		conteudo += gerarRegistroBpaI(reg, folha, sequencia)
+		sb.WriteString(gerarRegistroBpaI(reg, folha, sequencia))
 	}
 
-	return []byte(conteudo), nil
+	return []byte(sb.String()), nil
 }
 
 // calcularChecksum calcula o campo de controle do cabecalho.
 // soma = soma(procedimento_como_int64 + quantidade), campo_controle = (soma % 1111) + 1111
-func calcularChecksum(c *Construtor) int {
+func calcularChecksum(c *Construtor) (int, error) {
 	var soma int64
 	for _, reg := range c.registrosC {
-		procVal, _ := strconv.ParseInt(reg.Procedimento, 10, 64)
+		procVal, err := strconv.ParseInt(reg.Procedimento, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("%w: procedimento invalido para checksum: %s", ErrCampoControleBpa, reg.Procedimento)
+		}
 		soma += procVal + int64(reg.Quantidade)
 	}
 	for _, reg := range c.registrosI {
-		procVal, _ := strconv.ParseInt(reg.Procedimento, 10, 64)
+		procVal, err := strconv.ParseInt(reg.Procedimento, 10, 64)
+		if err != nil {
+			return 0, fmt.Errorf("%w: procedimento invalido para checksum: %s", ErrCampoControleBpa, reg.Procedimento)
+		}
 		soma += procVal + int64(reg.Quantidade)
 	}
-	return int(soma%1111) + 1111
+	return int(soma%1111) + 1111, nil
 }
