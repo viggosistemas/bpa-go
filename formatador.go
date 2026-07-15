@@ -23,6 +23,17 @@ func formatarAlfanumerico(valor string, tamanho int) string {
 	return valor + strings.Repeat(" ", tamanho-len(valor))
 }
 
+// formatarNumericoOuBranco formata um campo numerico OPCIONAL do layout BPA:
+// quando vazio, devolve `tamanho` espacos (padrao "brancos" do DATASUS para
+// campos numericos nao informados); quando preenchido, alinha a direita com
+// zeros a esquerda (identico a formatarNumerico).
+func formatarNumericoOuBranco(valor string, tamanho int) string {
+	if valor == "" {
+		return strings.Repeat(" ", tamanho)
+	}
+	return formatarNumerico(valor, tamanho)
+}
+
 // normalizarTexto converte para maiusculas e remove diacriticos (acentos).
 func normalizarTexto(texto string) string {
 	texto = strings.ToUpper(texto)
