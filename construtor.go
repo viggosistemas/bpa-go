@@ -19,10 +19,10 @@ const registrosPorFolha = 20
 
 // Construtor e o builder principal para gerar arquivos BPA.
 type Construtor struct {
-	cabecalho   CabecalhoEntrada
-	registrosC  []RegistroBpaCEntrada
-	registrosI  []RegistroBpaIEntrada
-	tipoAtual   tipoBpa
+	cabecalho  CabecalhoEntrada
+	registrosC []RegistroBpaCEntrada
+	registrosI []RegistroBpaIEntrada
+	tipoAtual  tipoBpa
 }
 
 // NovoConstrutor cria um novo construtor com o cabecalho informado.

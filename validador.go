@@ -146,5 +146,60 @@ func validarRegistroBpaI(r RegistroBpaIEntrada) error {
 	if len(r.NomePaciente) > 30 {
 		return fmt.Errorf("%w: nome_paciente deve ter no maximo 30 caracteres", ErrValidacaoBpa)
 	}
+	if err := validarCaudaBpaI(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+// validarCaudaBpaI valida os campos OPCIONAIS da cauda do BPA-I (posicoes
+// 151-338). Vazio e sempre valido (vira brancos). Numericos: apenas digitos e
+// dentro do tamanho; alfanumericos: apenas o tamanho maximo.
+func validarCaudaBpaI(r RegistroBpaIEntrada) error {
+	numericos := []struct {
+		nome    string
+		valor   string
+		tamanho int
+	}{
+		{"raca_cor", r.RacaCor, 2},
+		{"etnia", r.Etnia, 4},
+		{"nacionalidade", r.Nacionalidade, 3},
+		{"servico", r.Servico, 3},
+		{"classificacao", r.Classificacao, 3},
+		{"equipe_seq", r.EquipeSeq, 8},
+		{"equipe_area", r.EquipeArea, 4},
+		{"cnpj", r.Cnpj, 14},
+		{"cep", r.Cep, 8},
+		{"cod_logradouro", r.CodLogradouro, 3},
+		{"ine", r.Ine, 10},
+	}
+	for _, c := range numericos {
+		if c.valor == "" {
+			continue
+		}
+		if len(c.valor) > c.tamanho {
+			return fmt.Errorf("%w: %s deve ter no maximo %d digitos", ErrValidacaoBpa, c.nome, c.tamanho)
+		}
+		if !apenasDigitos(c.valor) {
+			return fmt.Errorf("%w: %s deve conter apenas digitos", ErrValidacaoBpa, c.nome)
+		}
+	}
+	alfanumericos := []struct {
+		nome    string
+		valor   string
+		tamanho int
+	}{
+		{"endereco", r.Endereco, 30},
+		{"complemento", r.Complemento, 10},
+		{"numero", r.Numero, 5},
+		{"bairro", r.Bairro, 30},
+		{"telefone", r.Telefone, 11},
+		{"email", r.Email, 40},
+	}
+	for _, c := range alfanumericos {
+		if len(c.valor) > c.tamanho {
+			return fmt.Errorf("%w: %s deve ter no maximo %d caracteres", ErrValidacaoBpa, c.nome, c.tamanho)
+		}
+	}
 	return nil
 }
