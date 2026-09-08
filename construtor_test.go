@@ -91,9 +91,9 @@ func TestTamanhoBpaI(t *testing.T) {
 	}
 	linhas := strings.Split(string(dados), "\r\n")
 	regLinha := linhas[1]
-	// 340 bytes = conteudo sem CRLF = 338
-	if len(regLinha) != 338 {
-		t.Errorf("tamanho do registro BPA-I = %d, esperado 338 (340 com CRLF)", len(regLinha))
+	// 355 bytes = conteudo sem CRLF = 353
+	if len(regLinha) != 353 {
+		t.Errorf("tamanho do registro BPA-I = %d, esperado 353 (355 com CRLF)", len(regLinha))
 	}
 }
 
@@ -175,8 +175,8 @@ func TestArquivoCompletoBpaI(t *testing.T) {
 	if err != nil {
 		t.Fatalf("erro inesperado: %v", err)
 	}
-	// cabecalho(132) + n * registro(340) = 132 + 2*340 = 812
-	esperado := 132 + n*340
+	// cabecalho(132) + n * registro(355) = 132 + 2*355 = 842
+	esperado := 132 + n*355
 	if len(dados) != esperado {
 		t.Errorf("tamanho total = %d, esperado %d", len(dados), esperado)
 	}
@@ -214,7 +214,7 @@ func TestRegistroBpaCTamanhoExato50(t *testing.T) {
 	}
 }
 
-func TestRegistroBpaITamanhoExato340(t *testing.T) {
+func TestRegistroBpaITamanhoExato355(t *testing.T) {
 	c := NovoConstrutor(cabecalhoValido())
 	_ = c.AdicionarRegistroBpaI(registroIValido())
 	dados, err := c.Construir()
@@ -222,7 +222,7 @@ func TestRegistroBpaITamanhoExato340(t *testing.T) {
 		t.Fatalf("erro inesperado: %v", err)
 	}
 	resto := dados[132:]
-	if len(resto) != 340 {
-		t.Errorf("tamanho registro BPA-I com CRLF = %d, esperado 340", len(resto))
+	if len(resto) != 355 {
+		t.Errorf("tamanho registro BPA-I com CRLF = %d, esperado 355", len(resto))
 	}
 }

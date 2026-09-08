@@ -131,6 +131,18 @@ func validarRegistroBpaI(r RegistroBpaIEntrada) error {
 	if r.CnsPaciente != "" && !apenasDigitos(r.CnsPaciente) {
 		return fmt.Errorf("%w: cns_paciente deve conter apenas digitos", ErrValidacaoBpa)
 	}
+	if r.CpfPaciente != "" && len(r.CpfPaciente) != 11 {
+		return fmt.Errorf("%w: cpf_paciente deve ter exatamente 11 digitos", ErrValidacaoBpa)
+	}
+	if r.CpfPaciente != "" && !apenasDigitos(r.CpfPaciente) {
+		return fmt.Errorf("%w: cpf_paciente deve conter apenas digitos", ErrValidacaoBpa)
+	}
+	if r.CaraterAtendimento != "" && r.CaraterAtendimento != "01" && r.CaraterAtendimento != "02" {
+		return fmt.Errorf("%w: carater_atendimento deve ser 01, 02 ou vazio", ErrValidacaoBpa)
+	}
+	if r.SituacaoRua != "" && r.SituacaoRua != "S" && r.SituacaoRua != "N" {
+		return fmt.Errorf("%w: situacao_rua deve ser S, N ou vazio", ErrValidacaoBpa)
+	}
 	if len(r.DataNascimento) != 8 {
 		return fmt.Errorf("%w: data_nascimento deve ter exatamente 8 digitos", ErrValidacaoBpa)
 	}

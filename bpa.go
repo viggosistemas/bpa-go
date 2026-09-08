@@ -66,4 +66,16 @@ type RegistroBpaIEntrada struct {
 	Telefone      string // max 11 digitos - PRD_DDTEL_PCNTE (com DDD, sem mascara)
 	Email         string // max 40 - PRD_EMAIL_PCNTE
 	Ine           string // 10 digitos - PRD_INE (Identificacao Nacional de Equipes)
+
+	// Bloco 339-353 do layout BPA-I de 355 bytes (v1.2.0). Medido byte a byte
+	// contra o arquivo gerado pelo BPA-Magnetico de um municipio (competencia
+	// 202608): o importador le por posicao, e uma linha de 338 bytes de conteudo
+	// chega 15 bytes curta. CPF e CNS do paciente sao campos PROPRIOS e
+	// alternativos: informe um deles e deixe o outro vazio (branco). As
+	// posicoes 350 e 352-353 sao reservadas e saem sempre em branco.
+	CpfPaciente string // 11 digitos - PRD_CPF_PCNTE (339-349); vazio -> brancos
+	// PRD_CATEN (95-96): carater do atendimento, "01" eletivo ou "02" urgencia.
+	// O municipio preenche em 100% das linhas; vazio -> brancos (compat <= v1.1.0).
+	CaraterAtendimento string // 2 digitos - PRD_CATEN (95-96)
+	SituacaoRua        string // "S" ou "N" - PRD_SIT_RUA (351); vazio -> "N"
 }

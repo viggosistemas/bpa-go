@@ -7,7 +7,7 @@ import (
 )
 
 // linhaBpaI constroi um arquivo com um unico registro BPA-I e devolve a linha
-// de conteudo (338 bytes, sem o CRLF): bytes [132 : 132+338] do arquivo.
+// de conteudo (353 bytes, sem o CRLF): bytes [132 : 132+353] do arquivo.
 func linhaBpaI(t *testing.T, reg RegistroBpaIEntrada) string {
 	t.Helper()
 	c := NovoConstrutor(cabecalhoValido())
@@ -18,10 +18,10 @@ func linhaBpaI(t *testing.T, reg RegistroBpaIEntrada) string {
 	if err != nil {
 		t.Fatalf("erro ao construir: %v", err)
 	}
-	// cabecalho = 132 bytes; registro BPA-I = 340 bytes (338 + CRLF).
-	linha := string(dados[132 : 132+338])
-	if len(linha) != 338 {
-		t.Fatalf("conteudo da linha BPA-I = %d bytes, esperado 338", len(linha))
+	// cabecalho = 132 bytes; registro BPA-I = 355 bytes (353 + CRLF).
+	linha := string(dados[132 : 132+353])
+	if len(linha) != 353 {
+		t.Fatalf("conteudo da linha BPA-I = %d bytes, esperado 353", len(linha))
 	}
 	return linha
 }
@@ -88,7 +88,7 @@ func TestBpaICaudaPosicoes(t *testing.T) {
 
 // TestBpaICaudaVaziaEBranca garante retrocompatibilidade: sem campos da cauda,
 // as posicoes 151-338 sao TODAS espacos (mesmo comportamento do reservado(188)
-// das versoes <= v1.0.1) e a linha continua com 338 bytes de conteudo.
+// das versoes <= v1.0.1) e a linha continua com 353 bytes de conteudo.
 func TestBpaICaudaVaziaEBranca(t *testing.T) {
 	linha := linhaBpaI(t, registroIValido())
 	cauda := linha[150:338] // posicoes 151-338
@@ -126,7 +126,7 @@ func TestBpaICaudaValidacaoNumerica(t *testing.T) {
 }
 
 // TestBpaICaudaTamanhoTotal reforca que preencher a cauda NAO altera o tamanho
-// de 340 bytes da linha (a cauda substitui exatamente os 188 bytes reservados).
+// de 355 bytes da linha (o bloco 339-353 entra junto da cauda).
 func TestBpaICaudaTamanhoTotal(t *testing.T) {
 	c := NovoConstrutor(cabecalhoValido())
 	if err := c.AdicionarRegistroBpaI(registroICaudaCompleta()); err != nil {
@@ -136,7 +136,7 @@ func TestBpaICaudaTamanhoTotal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("erro ao construir: %v", err)
 	}
-	if resto := dados[132:]; len(resto) != 340 {
-		t.Errorf("linha BPA-I com cauda cheia = %d bytes, esperado 340", len(resto))
+	if resto := dados[132:]; len(resto) != 355 {
+		t.Errorf("linha BPA-I com cauda cheia = %d bytes, esperado 355", len(resto))
 	}
 }
