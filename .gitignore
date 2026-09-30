@@ -1,0 +1,5 @@
+# indice derivado do memox: reconstruivel, nao versionado
+.expx/memoria/
+
+# bytecode dos hooks do Expx
+__pycache__/
