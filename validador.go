@@ -17,10 +17,22 @@ func apenasDigitos(s string) bool {
 	return len(s) > 0
 }
 
+// validarCompetencia valida a competencia AAAAMM: 6 digitos numericos e mes
+// entre 01 e 12.
+func validarCompetencia(competencia string) error {
+	if len(competencia) != 6 || !reDigitos.MatchString(competencia) {
+		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
+	}
+	if mes := competencia[4:]; mes < "01" || mes > "12" {
+		return fmt.Errorf("%w: competencia deve ter mes entre 01 e 12", ErrValidacaoBpa)
+	}
+	return nil
+}
+
 // validarCabecalho valida os campos da entrada do cabecalho.
 func validarCabecalho(c CabecalhoEntrada) error {
-	if len(c.Competencia) != 6 || !reDigitos.MatchString(c.Competencia) {
-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
+	if err := validarCompetencia(c.Competencia); err != nil {
+		return err
 	}
 	if c.TipoDestino != "E" && c.TipoDestino != "M" {
 		return fmt.Errorf("%w: tipo_destino deve ser 'E' ou 'M'", ErrValidacaoBpa)
@@ -54,8 +66,8 @@ func validarRegistroBpaC(r RegistroBpaCEntrada) error {
 	if r.Cnes != "" && !apenasDigitos(r.Cnes) {
 		return fmt.Errorf("%w: cnes deve conter apenas digitos", ErrValidacaoBpa)
 	}
-	if len(r.Competencia) != 6 || !reDigitos.MatchString(r.Competencia) {
-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
+	if err := validarCompetencia(r.Competencia); err != nil {
+		return err
 	}
 	if len(r.Cbo) > 6 {
 		return fmt.Errorf("%w: cbo deve ter no maximo 6 caracteres", ErrValidacaoBpa)
@@ -86,8 +98,8 @@ func validarRegistroBpaI(r RegistroBpaIEntrada) error {
 	if r.Cnes != "" && !apenasDigitos(r.Cnes) {
 		return fmt.Errorf("%w: cnes deve conter apenas digitos", ErrValidacaoBpa)
 	}
-	if len(r.Competencia) != 6 || !reDigitos.MatchString(r.Competencia) {
-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
+	if err := validarCompetencia(r.Competencia); err != nil {
+		return err
 	}
 	if r.Cbo == "" {
 		return fmt.Errorf("%w: cbo e obrigatorio para BPA-I", ErrValidacaoBpa)
