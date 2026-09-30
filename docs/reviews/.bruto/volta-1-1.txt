@@ -1,0 +1,14 @@
+O diff é pequeno e focado. Vou ler o restante do contexto do repo para verificar se a nova regra conflita com outros pontos que produzem/consumem `Competencia`, e checar as regras do repo (CLAUDE.md/skills).
+Revisão concluída. Contexto do que analisei:
+
+**Escopo do diff** (1 commit, `1a783f4`): extração de `validarCompetencia()` em `validador.go` (checagem de 6 dígitos + regra nova de mês 01–12 aplicada aos três pontos: cabeçalho, BPA-C e BPA-I) + novo teste `validador_competencia_test.go`.
+
+**Verificações feitas:**
+- Lógica de `validarCompetencia` (validador.go:22-30): `reDigitos = ^\d+$` em Go/RE2 casa só dígitos ASCII; com `len == 6` garantido por curto-circuito, o slice `competencia[4:]` é seguro e a comparação lexicográfica (`< "01" || > "12"`) em string de 2 dígitos ASCII equivale à numérica — meses `00` e `13`–`99` rejeitados corretamente. Mensagens de erro preservam o contrato `ErrValidacaoBpa` via `%w`.
+- Regressão: os três call sites tinham checagem idêntica antes (competência já era obrigatória e de 6 dígitos); a única mudança comportamental é rejeitar mês inválido — que é o objetivo do fix. Nenhum teste existente usa mês fora de 01–12 (grep por `2026(1[3-9]|...)` só bate no teste novo). Fixtures do teste novo passam validação fora da competência (conferei campo a campo contra `validadorRegistroBpaI`/`Cauda`), então o erro retornado nos casos de rejeição é de fato o do mês.
+- Teste não é tautológico: exercita os validadores reais com inputs concretos; sem a correção, `validarCabecalho("202613")` retornaria nil e o teste falharia (`t.Fatalf` esperando `ErrValidacaoBpa`).
+- Consumers: o único fluxo é geração via `Construtor` (não há parser no repo); `formatarNumerico(Competencia, 6)` nos geradores não conflita com a regra nova. Sem regras de repo (CLAUDE.md/.claude) violadas — `.claude/` está vazio.
+
+Achado único é de robustess fora do escopo do fix (nível opinião, não bug verificado do diff):
+
+- [PLAUSIBLE] validador.go:26 — `validarCompetencia` valida só o mês, não o ano (ex.: `"000004"` ou `"999912"` passam) — cenário: caller informa competência com ano inválido `000004` → validação retorna nil e o arquivo BPA é gerado com competência de ano inexistente, que o DATASUS rejeitaria downstream.
