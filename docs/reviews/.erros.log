@@ -1,0 +1,216 @@
+[0m
+> revisor-torre · glm-5.3
+[0m
+[0m$ [0mgit log --oneline origin/main..HEAD
+1a783f4 fix(validador): rejeitar competencia com mes fora de 01-12
+[0m
+[0m$ [0mgit diff --stat origin/main..HEAD -- . :(exclude)*.png :(exclude)*.jpg :(exclude)*.gif :(exclude)*.webp :(exclude)*.pdf :(exclude)*.mp3 :(exclude)*.wav :(exclude)*.woff* :(exclude)*.ico
+zsh:1: no matches found: :(exclude)*.png
+[0m
+[0m$ [0mgit diff --stat origin/main..HEAD -- . ':(exclude)*.png' ':(exclude)*.jpg' ':(exclude)*.gif' ':(exclude)*.webp' ':(exclude)*.pdf' ':(exclude)*.mp3' ':(exclude)*.wav' ':(exclude)*.woff*' ':(exclude)*.ico'
+validador.go                  | 24 +++++++++---
+ validador_competencia_test.go | 87 +++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 105 insertions(+), 6 deletions(-)
+[0m
+[0m$ [0mgit diff origin/main..HEAD -- . ':(exclude)*.png' ':(exclude)*.jpg' ':(exclude)*.gif' ':(exclude)*.webp' ':(exclude)*.pdf' ':(exclude)*.mp3' ':(exclude)*.wav' ':(exclude)*.woff*' ':(exclude)*.ico'
+diff --git a/validador.go b/validador.go
+index 12105b5..30b1fd7 100644
+--- a/validador.go
++++ b/validador.go
+@@ -17,10 +17,22 @@ func apenasDigitos(s string) bool {
+ 	return len(s) > 0
+ }
+ 
++// validarCompetencia valida a competencia AAAAMM: 6 digitos numericos e mes
++// entre 01 e 12.
++func validarCompetencia(competencia string) error {
++	if len(competencia) != 6 || !reDigitos.MatchString(competencia) {
++		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
++	}
++	if mes := competencia[4:]; mes < "01" || mes > "12" {
++		return fmt.Errorf("%w: competencia deve ter mes entre 01 e 12", ErrValidacaoBpa)
++	}
++	return nil
++}
++
+ // validarCabecalho valida os campos da entrada do cabecalho.
+ func validarCabecalho(c CabecalhoEntrada) error {
+-	if len(c.Competencia) != 6 || !reDigitos.MatchString(c.Competencia) {
+-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
++	if err := validarCompetencia(c.Competencia); err != nil {
++		return err
+ 	}
+ 	if c.TipoDestino != "E" && c.TipoDestino != "M" {
+ 		return fmt.Errorf("%w: tipo_destino deve ser 'E' ou 'M'", ErrValidacaoBpa)
+@@ -54,8 +66,8 @@ func validarRegistroBpaC(r RegistroBpaCEntrada) error {
+ 	if r.Cnes != "" && !apenasDigitos(r.Cnes) {
+ 		return fmt.Errorf("%w: cnes deve conter apenas digitos", ErrValidacaoBpa)
+ 	}
+-	if len(r.Competencia) != 6 || !reDigitos.MatchString(r.Competencia) {
+-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
++	if err := validarCompetencia(r.Competencia); err != nil {
++		return err
+ 	}
+ 	if len(r.Cbo) > 6 {
+ 		return fmt.Errorf("%w: cbo deve ter no maximo 6 caracteres", ErrValidacaoBpa)
+@@ -86,8 +98,8 @@ func validarRegistroBpaI(r RegistroBpaIEntrada) error {
+ 	if r.Cnes != "" && !apenasDigitos(r.Cnes) {
+ 		return fmt.Errorf("%w: cnes deve conter apenas digitos", ErrValidacaoBpa)
+ 	}
+-	if len(r.Competencia) != 6 || !reDigitos.MatchString(r.Competencia) {
+-		return fmt.Errorf("%w: competencia deve ter 6 digitos numericos", ErrValidacaoBpa)
++	if err := validarCompetencia(r.Competencia); err != nil {
++		return err
+ 	}
+ 	if r.Cbo == "" {
+ 		return fmt.Errorf("%w: cbo e obrigatorio para BPA-I", ErrValidacaoBpa)
+diff --git a/validador_competencia_test.go b/validador_competencia_test.go
+new file mode 100644
+index 0000000..2007c9b
+--- /dev/null
++++ b/validador_competencia_test.go
+@@ -0,0 +1,87 @@
++package bpa
++
++import (
++	"errors"
++	"strings"
++	"testing"
++)
++
++// Competencia AAAAMM: o mes (2 ultimos digitos) deve ficar entre 01 e 12.
++// Espelha a regra D-15 do bpa-ts.
++func TestCompetenciaMesValido(t *testing.T) {
++	cabecalho := CabecalhoEntrada{
++		Competencia:      "202604",
++		OrgaoResponsavel: "SMS",
++		SiglaOrgao:       "SMS",
++		CnpjCpf:          "12345678901234",
++		OrgaoDestino:     "SES",
++		TipoDestino:      "E",
++		VersaoSistema:    "1.0",
++	}
++	bpaC := RegistroBpaCEntrada{
++		Cnes:         "1234567",
++		Cbo:          "225142",
++		Procedimento: "0301010064",
++		Idade:        30,
++		Quantidade:   1,
++		Origem:       "BPA",
++	}
++	bpaI := RegistroBpaIEntrada{
++		Cnes:            "1234567",
++		CnsProfissional: "123456789012345",
++		Cbo:             "225142",
++		DataAtendimento: "20260401",
++		Procedimento:    "0301010064",
++		CnsPaciente:     "987654321012345",
++		Sexo:            "M",
++		MunicipioIbge:   "355030",
++		Cid:             "J06 ",
++		Idade:           30,
++		Quantidade:      1,
++		Origem:          "BPA",
++		NomePaciente:    "JOAO DA SILVA",
++		DataNascimento:  "19960115",
++	}
++
++	pontos := []struct {
++		nome    string
++		validar func(competencia string) error
++	}{
++		{"cabecalho", func(c string) error {
++			e := cabecalho
++			e.Competencia = c
++			return validarCabecalho(e)
++		}},
++		{"bpa-c", func(c string) error {
++			e := bpaC
++			e.Competencia = c
++			return validarRegistroBpaC(e)
++		}},
++		{"bpa-i", func(c string) error {
++			e := bpaI
++			e.Competencia = c
++			return validarRegistroBpaI(e)
++		}},
++	}
++
++	for _, p := range pontos {
++		for _, comp := range []string{"202601", "202604", "202612"} {
++			t.Run(p.nome+"/aceita "+comp, func(t *testing.T) {
++				if err := p.validar(comp); err != nil {
++					t.Errorf("esperava nil, obteve %v", err)
++				}
++			})
++		}
++		for _, comp := range []string{"202613", "202600", "202699"} {
++			t.Run(p.nome+"/rejeita "+comp, func(t *testing.T) {
++				err := p.validar(comp)
++				if !errors.Is(err, ErrValidacaoBpa) {
++					t.Fatalf("esperava ErrValidacaoBpa, obteve %v", err)
++				}
++				if !strings.Contains(err.Error(), "mes entre 01 e 12") {
++					t.Errorf("mensagem sem regra do mes: %v", err)
++				}
++			})
++		}
++	}
++}
+[0m
+[0m→ [0mRead validador.go
+[0m
+[0m$ [0mls -la && git log --oneline -5
+total 104
+drwxrwxr-x 4 andr3 andr3 4096 set 30 10:10 .
+drwxrwxr-x 3 andr3 andr3 4096 set 30 10:05 ..
+-rw-rw-r-- 1 andr3 andr3 4076 set 30 10:05 bpa.go
+-rw-rw-r-- 1 andr3 andr3 1084 set 30 10:05 cabecalho.go
+drwxrwxr-x 2 andr3 andr3 4096 set 30 10:10 .claude
+-rw-rw-r-- 1 andr3 andr3 3192 set 30 10:05 construtor.go
+-rw-rw-r-- 1 andr3 andr3 6416 set 30 10:05 construtor_test.go
+drwxrwxr-x 3 andr3 andr3 4096 set 30 10:10 docs
+-rw-rw-r-- 1 andr3 andr3  569 set 30 10:05 erros.go
+-rw-rw-r-- 1 andr3 andr3 1486 set 30 10:05 formatador.go
+-rw-rw-r-- 1 andr3 andr3 1771 set 30 10:05 formatador_test.go
+-rw-rw-r-- 1 andr3 andr3   72 set 30 10:05 .git
+-rw-rw-r-- 1 andr3 andr3   85 set 30 10:05 go.mod
+-rw-rw-r-- 1 andr3 andr3  155 set 30 10:05 go.sum
+-rw-rw-r-- 1 andr3 andr3  845 set 30 10:05 registro_bpa_c.go
+-rw-rw-r-- 1 andr3 andr3 4848 set 30 10:05 registro_bpa_i_cauda_test.go
+-rw-rw-r-- 1 andr3 andr3 2913 set 30 10:05 registro_bpa_i_cpf_test.go
+-rw-rw-r-- 1 andr3 andr3 5084 set 30 10:05 registro_bpa_i.go
+-rw-rw-r-- 1 andr3 andr3 2134 set 30 10:09 validador_competencia_test.go
+-rw-rw-r-- 1 andr3 andr3 7960 set 30 10:09 validador.go
+-rw-rw-r-- 1 andr3 andr3 5857 set 30 10:05 validador_test.go
+1a783f4 fix(validador): rejeitar competencia com mes fora de 01-12
+3babfa6 Merge pull request #2 from viggosistemas/feat/bpa-i-layout-353
+c1da926 feat(bpa-i): layout de 353 bytes com CPF, situacao de rua e carater do atendimento
+fc86d04 feat(bpa-i): emitir cauda 151-338 (raca/etnia/nacionalidade/endereco) (#1)
+a9aff6c fix: corrigir issues criticas do code review (validacao numerica, nomes de erros)
+[0m
+[0m✱ [0mGrep "Competencia|competencia"[90m 37 matches[0m
+[0m→ [0mRead bpa.go
+[0m→ [0mRead erros.go
+[0m→ [0mRead construtor.go
+[0m
+[0m$ [0mls -la .claude docs 2>/dev/null; ls docs/* 2>/dev/null
+.claude:
+total 8
+drwxrwxr-x 2 andr3 andr3 4096 set 30 10:10 .
+drwxrwxr-x 4 andr3 andr3 4096 set 30 10:10 ..
+
+docs:
+total 12
+drwxrwxr-x 3 andr3 andr3 4096 set 30 10:10 .
+drwxrwxr-x 4 andr3 andr3 4096 set 30 10:10 ..
+drwxrwxr-x 2 andr3 andr3 4096 set 30 10:10 reviews
+placar.md
+[0m
+[0m✱ [0mGrep "2026(1[3-9]|[2-9][0-9]|00)|20[0-9]{2}(1[3-9]|[2-9][0-9]|00)"[90m 1 match[0m
+[0m→ [0mRead formatador.go
+[0m
+[0m$ [0mls docs/reviews && cat docs/placar.md 2>/dev/null | head -40
+placar.md
+[0m
+[0m→ [0mRead validador_test.go
